@@ -1,0 +1,74 @@
+version: '3.8'
+
+# Services definition - defines the containers to run
+services:
+  # Counting microservice
+  counting:
+    # Build from local Dockerfile in app/counting directory
+    build:
+      context: ./app/counting
+      dockerfile: Dockerfile
+    # Container name for easy reference
+    container_name: counting-service
+    # Port mapping: host_port:container_port
+    ports:
+      - "9003:9003"
+    # Environment variables
+    environment:
+      - PORT=9003
+    # Restart policy
+    restart: unless-stopped
+    # Health check to monitor service status
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9003/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Dashboard microservice
+  dashboard:
+    # Build from local Dockerfile in app/dashboard directory
+    build:
+      context: ./app/dashboard
+      dockerfile: Dockerfile
+    # Container name for easy reference
+    container_name: dashboard-service
+    # Port mapping: host_port:container_port
+    ports:
+      - "9002:9002"
+    # Environment variables - counting service uses internal Docker DNS
+    environment:
+      - PORT=9002
+      - COUNTING_SERVICE_URL=http://counting:9003
+    # Service dependencies - ensures counting starts before dashboard
+    depends_on:
+      counting:
+        condition: service_healthy
+    # Restart policy
+    restart: unless-stopped
+    # Health check to monitor service status
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9002/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Networks - services can communicate via service names on the default network
+networks:
+  default:
+    name: microservices-network
+    driver: bridge
