@@ -2,10 +2,11 @@
   "service": {
     "name": "counting",
     "id": "counting-3",
-    "port": 9005,
+    "address": "172.20.0.4",
+    "port": 9003,
     "check": {
       "id": "counting3-check",
-      "http": "http://127.0.0.1:9005/",
+      "http": "http://172.20.0.4:9003/health",
       "method": "GET",
       "interval": "1s",
       "timeout": "1s"

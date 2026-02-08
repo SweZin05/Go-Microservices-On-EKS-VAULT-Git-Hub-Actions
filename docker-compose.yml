@@ -1,98 +1,55 @@
-version: '3.8'
-
 services:
   consul:
-    image: consul:latest
+    image: hashicorp/consul:latest
     container_name: consul
+    command: agent -dev -client=0.0.0.0
     ports:
       - "8500:8500"
       - "8600:8600/udp"
-    command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
+    networks:
+      - consul-net
+
+  counting:
+    image: swezin55/counting:latest
     environment:
-      - CONSUL_BIND_INTERFACE=eth0
+      - PORT=9003
+    networks:
+      - consul-net
+    depends_on:
+      - consul
+
+  dashboard:
+    image: swezin55/dashboard:latest
+
+    environment:
+      - PORT=9002
+      - COUNTING_SERVICE_URL=http://counting:9003
+    depends_on:
+      - counting
+    networks:
+      - consul-net
+
+  consul-register:
+    image: hashicorp/consul:latest
+    container_name: consul-register
     volumes:
-      - ./consul/config:/consul/config:ro
-    restart: unless-stopped
-
-  counting1:
-    build:
-      context: ./app/counting
-      dockerfile: Dockerfile
-    ports:
-      - "9003:9003"
-    environment:
-      - PORT=9003
+      - ./register-services.sh:/register-services.sh
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: >
+      sh -c "
+      apk add --no-cache bash docker-cli &&
+      sleep 15 &&
+      /register-services.sh
+      "
     depends_on:
       - consul
-    restart: unless-stopped
-
-  counting2:
-    build:
-      context: ./app/counting
-      dockerfile: Dockerfile
-    ports:
-      - "9004:9003"
+      - counting
+      - dashboard
+    networks:
+      - consul-net
     environment:
-      - PORT=9003
-    depends_on:
-      - consul
-    restart: unless-stopped
-
-  counting3:
-    build:
-      context: ./app/counting
-      dockerfile: Dockerfile
-    ports:
-      - "9005:9003"
-    environment:
-      - PORT=9003
-    depends_on:
-      - consul
-    restart: unless-stopped
-
-  dashboard1:
-    build:
-      context: ./app/dashboard
-      dockerfile: Dockerfile
-    ports:
-      - "9002:9002"
-    environment:
-      - PORT=9002
-      - COUNTING_SERVICE_URL=http://consul:8500
-    depends_on:
-      - consul
-      - counting1
-    restart: unless-stopped
-
-  dashboard2:
-    build:
-      context: ./app/dashboard
-      dockerfile: Dockerfile
-    ports:
-      - "9006:9002"
-    environment:
-      - PORT=9002
-      - COUNTING_SERVICE_URL=http://consul:8500
-    depends_on:
-      - consul
-      - counting2
-    restart: unless-stopped
-
-  dashboard3:
-    build:
-      context: ./app/dashboard
-      dockerfile: Dockerfile
-    ports:
-      - "9007:9002"
-    environment:
-      - PORT=9002
-      - COUNTING_SERVICE_URL=http://consul:8500
-    depends_on:
-      - consul
-      - counting3
-    restart: unless-stopped
+      - CONSUL_HTTP_ADDR=consul:8500
 
 networks:
-  default:
-    name: microservices-network
+  consul-net:
     driver: bridge

@@ -1,10 +1,12 @@
 {
   "service": {
+    "id": "dashboard-3",
     "name": "dashboard",
-    "port": 9007,
+    "address": "172.20.0.7",
+    "port": 9002,
     "check": {
       "id": "dashboard3-check",
-      "http": "http://localhost:9007/",
+      "http": "http://172.20.0.7:9002/health",
       "method": "GET",
       "interval": "1s",
       "timeout": "1s"
