@@ -1,0 +1,14 @@
+{
+  "service": {
+    "name": "counting",
+    "id": "counting-2",
+    "port": 9004,
+    "check": {
+      "id": "counting2-check",
+      "http": "http://127.0.0.1:9004/",
+      "method": "GET",
+      "interval": "1s",
+      "timeout": "1s"
+    }
+  }
+}

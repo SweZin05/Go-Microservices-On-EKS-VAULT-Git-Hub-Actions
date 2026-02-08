@@ -1,0 +1,14 @@
+{
+  "service": {
+    "ID": "dashboard-2",
+    "Name": "dashboard",
+    "Address": "dashboard2",
+    "Port": 9002,
+    "Tags": ["dashboard"],
+    "Check": {
+      "HTTP": "http://dashboard2:9002/health",
+      "Interval": "10s",
+      "Timeout": "5s"
+    }
+  }
+}
